@@ -122,7 +122,7 @@ export default function Login() {
             </div>
 
             <p className="text-xl mb-2">Don't have an account yet?</p>
-            <p className="text-sm opacity-90">Contact us at <span className="font-semibold">programmer.ferg@gmail.com</span> and</p>
+            <p className="text-sm opacity-90">Contact us at <span className="font-semibold">jomelmarino42@gmail.com</span> and</p>
             <p className="text-sm opacity-90">we will take care of everything!!</p>
           </div>
         </div>
