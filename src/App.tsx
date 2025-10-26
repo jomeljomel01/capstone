@@ -6,11 +6,11 @@ import NewStudent from './pages/NewStudent';
 import ALSStudent from './pages/ALSStudent';
 import ALSNewEnrollees from './pages/ALSNewEnrollees';
 import RegularStudent from './pages/RegularStudent';
-import TeacherAccount from './pages/TeacherAccount';
+import AppUsers from './pages/AppUsers';
 import Login from './pages/Login';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
 
   if (loading) {
@@ -33,8 +33,8 @@ function AppContent() {
         return <ALSNewEnrollees />;
       case 'regular-student':
         return <RegularStudent />;
-      case 'teacher-account':
-        return <TeacherAccount />;
+      case 'app-users':
+        return <AppUsers />;
       default:
         return <Dashboard />;
     }
@@ -42,7 +42,7 @@ function AppContent() {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-sky-200 via-blue-200 to-cyan-200">
-      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} onLogout={signOut} />
       <main className="ml-48 flex-1">
         {renderPage()}
       </main>

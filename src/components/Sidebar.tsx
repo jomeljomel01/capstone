@@ -1,11 +1,12 @@
-import { LayoutDashboard, UserPlus, BookOpen, GraduationCap, User } from 'lucide-react';
+import { LayoutDashboard, UserPlus, BookOpen, GraduationCap, User, LogOut } from 'lucide-react';
 
 interface SidebarProps {
   currentPage: string;
   onNavigate: (page: string) => void;
+  onLogout: () => void;
 }
 
-export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
+export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -13,7 +14,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
     { id: 'als-student', label: 'ALS Students', icon: BookOpen },
     { id: 'als-new-enrollees', label: 'ALS New Enrollees', icon: UserPlus },
     { id: 'new-student', label: 'New Enrollees', icon: UserPlus },
-    { id: 'teacher-account', label: 'Teacher Account', icon: User },
+    { id: 'app-users', label: 'AppUsers', icon: User },
   ];
 
 
@@ -46,7 +47,16 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
       </nav>
 
       <div className="absolute bottom-0 left-0 right-0">
-        <div className="p-3 text-xs text-slate-400 text-center border-t border-slate-700">
+        <div className="p-3 border-t border-slate-700">
+          <button
+            onClick={onLogout}
+            className="w-full text-left px-4 py-3 transition-all duration-200 flex items-center space-x-2 text-slate-300 hover:bg-slate-700 hover:text-white"
+          >
+            <LogOut size={16} />
+            <span className="font-normal text-sm">Logout</span>
+          </button>
+        </div>
+        <div className="p-3 text-xs text-slate-400 text-center">
           <p>@2025, developed by SIRIUS</p>
           <p>for a better desktop.</p>
         </div>
