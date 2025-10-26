@@ -116,7 +116,10 @@ export default function Dashboard() {
   return (
     <div className="p-8">
       <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-4xl font-bold text-gray-700">Dashboard</h1>
+        <div className="flex items-center space-x-4">
+          <img src="/src/assets/Logo.png" alt="Logo" className="h-12 w-20" />
+          <h1 className="text-4xl font-bold text-gray-700">Dashboard</h1>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
@@ -156,7 +159,7 @@ export default function Dashboard() {
         ) : students.length === 0 ? (
           <div className="p-8 text-center text-gray-500">No enrolled students yet</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-96">
             <table className="w-full">
               <thead className="bg-blue-600 text-white">
                 <tr>
@@ -207,7 +210,7 @@ export default function Dashboard() {
         ) : alsStudents.length === 0 ? (
           <div className="p-8 text-center text-gray-500">No enrolled ALS students yet</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-96">
             <table className="w-full">
               <thead className="bg-green-600 text-white">
                 <tr>
@@ -254,7 +257,7 @@ export default function Dashboard() {
         ) : pendingStudents.length === 0 ? (
           <div className="p-8 text-center text-gray-500">No pending students</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-96">
             <table className="w-full">
               <thead className="bg-yellow-600 text-white">
                 <tr>
@@ -305,7 +308,7 @@ export default function Dashboard() {
         ) : alsPendingStudents.length === 0 ? (
           <div className="p-8 text-center text-gray-500">No pending ALS students</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-96">
             <table className="w-full">
               <thead className="bg-orange-600 text-white">
                 <tr>

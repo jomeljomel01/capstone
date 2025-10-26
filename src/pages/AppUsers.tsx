@@ -129,7 +129,7 @@ export default function AppUsers() {
         ) : appUsers.length === 0 ? (
           <div className="p-8 text-center text-gray-500">No app users found</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-96">
             <table className="w-full">
               <thead className="bg-purple-600 text-white">
                 <tr>

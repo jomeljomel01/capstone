@@ -21,7 +21,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarPr
   return (
     <div className="w-48 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 text-white h-screen fixed left-0 top-0 shadow-xl">
       <div className="p-4 border-b border-slate-600">
-        <h1 className="text-lg font-bold tracking-tight">Form2</h1>
+        <h1 className="text-lg font-bold tracking-tight">KVSHS-Enrollement-Management</h1>
       </div>
 
       <nav className="p-3 space-y-1 mt-4">
