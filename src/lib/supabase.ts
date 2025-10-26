@@ -63,7 +63,7 @@ export interface Student {
   transportation?: string;
   day?: string;
   time?: string;
-  distanceLearning?: string;
+  distanceLearning?: string | string[];
   gradeLevel?: string;
   guardianLN?: string;
   enrollment_status?: 'Pending' | 'Enrolled';

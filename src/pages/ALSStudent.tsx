@@ -6,11 +6,11 @@ export default function ALSStudent() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortGradeLevel, setSortGradeLevel] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedStudent, setEditedStudent] = useState<Student | null>(null);
+  const [originalLrn, setOriginalLrn] = useState<string | undefined>(undefined);
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch = searchTerm === '' ||
@@ -19,9 +19,7 @@ export default function ALSStudent() {
       (student.mname && student.mname.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (student.lrn && student.lrn.toString().includes(searchTerm));
 
-    const matchesGradeLevel = sortGradeLevel === '' || student.gradeLevel === sortGradeLevel;
-
-    return matchesSearch && matchesGradeLevel;
+    return matchesSearch;
   });
 
   useEffect(() => {
@@ -60,6 +58,7 @@ export default function ALSStudent() {
   const handleView = (student: Student) => {
     setSelectedStudent(student);
     setEditedStudent({ ...student });
+    setOriginalLrn(student.lrn);
     setShowModal(true);
     setIsEditing(false);
   };
@@ -76,18 +75,46 @@ export default function ALSStudent() {
   };
 
   const handleSave = async () => {
-    if (!editedStudent || !editedStudent.lrn) return;
+    if (!editedStudent || !originalLrn) return;
+
+    console.log('Starting save process...');
+    console.log('editedStudent:', editedStudent);
+    console.log('originalLrn:', originalLrn);
 
     try {
+      // Create a copy of editedStudent and handle array fields properly
+      const updateData = { ...editedStudent };
+      const processedData: Record<string, unknown> = {};
+      const arrayFields = ['distanceLearning']; // Add other array field names here
+
+      Object.keys(updateData).forEach(key => {
+        const value = (updateData as Record<string, unknown>)[key];
+        if (Array.isArray(value)) {
+          processedData[key] = value;
+        } else if (arrayFields.includes(key) && typeof value === 'string' && value.trim()) {
+          // Convert comma-separated string back to array for array fields
+          processedData[key] = value.split(',').map(item => item.trim());
+        } else {
+          processedData[key] = value;
+        }
+      });
+
+      console.log('Data being sent to Supabase:', processedData);
+
       const { error } = await supabase
         .from('ALS')
-        .update(editedStudent)
-        .eq('lrn', editedStudent.lrn);
+        .update(processedData)
+        .eq('lrn', originalLrn);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Update successful, updating local state...');
 
       setSelectedStudent(editedStudent);
-      setStudents(students.map(s => s.lrn === editedStudent.lrn ? editedStudent : s));
+      setStudents(students.map(s => s.lrn === originalLrn ? editedStudent : s));
       setIsEditing(false);
       alert('Student information updated successfully!');
     } catch (error) {
@@ -149,18 +176,6 @@ export default function ALSStudent() {
           <h2 className="text-sm font-semibold text-gray-700 uppercase mb-3">
             List of All ALS Students:
           </h2>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">SORT BY:</span>
-            <select
-              value={sortGradeLevel}
-              onChange={(e) => setSortGradeLevel(e.target.value)}
-              className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">GRADE LEVEL</option>
-              <option value="Grade 11">Grade 11</option>
-              <option value="Grade 12">Grade 12</option>
-            </select>
-          </div>
         </div>
 
         {loading ? (
@@ -175,7 +190,6 @@ export default function ALSStudent() {
                   <th className="px-4 py-3 text-left text-sm font-semibold">Action</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">LRN</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Age</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Age</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
                 </tr>
@@ -201,7 +215,6 @@ export default function ALSStudent() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-800">{student.lrn || 'N/A'}</td>
                     <td className="px-4 py-3 text-sm text-gray-800">{student.lname}, {student.fname} {student.mname}</td>
-                    <td className="px-4 py-3 text-sm text-gray-800">{student.age}</td>
                     <td className="px-4 py-3 text-sm text-gray-800">{student.age}</td>
                     <td className="px-4 py-3 text-sm text-gray-800">{student.enrollment_status}</td>
                   </tr>
@@ -265,7 +278,8 @@ export default function ALSStudent() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
                       {isEditing ? (
                         <input
-                          type="date"
+                          type="text"
+                          placeholder="YYYY-MM-DD"
                           value={editedStudent?.date || ''}
                           onChange={(e) => handleInputChange('date', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -343,7 +357,8 @@ export default function ALSStudent() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Birthday</label>
                       {isEditing ? (
                         <input
-                          type="date"
+                          type="text"
+                          placeholder="YYYY-MM-DD"
                           value={editedStudent?.bday || ''}
                           onChange={(e) => handleInputChange('bday', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -796,6 +811,19 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
+                          <span className="font-medium w-20">Middle Name:</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editedStudent?.guardianMN || ''}
+                              onChange={(e) => handleInputChange('guardianMN', e.target.value)}
+                              className="flex-1 px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                          ) : (
+                            <span>{selectedStudent.guardianMN || 'N/A'}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
                           <span className="font-medium w-20">Last Name:</span>
                           {isEditing ? (
                             <input
@@ -978,12 +1006,12 @@ export default function ALSStudent() {
                       {isEditing ? (
                         <input
                           type="text"
-                          value={editedStudent?.distanceLearning || ''}
+                          value={Array.isArray(editedStudent?.distanceLearning) ? editedStudent.distanceLearning.join(', ') : editedStudent?.distanceLearning || ''}
                           onChange={(e) => handleInputChange('distanceLearning', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                         />
                       ) : (
-                        <p className="text-lg font-semibold text-gray-900">{selectedStudent.distanceLearning || 'N/A'}</p>
+                        <p className="text-lg font-semibold text-gray-900">{Array.isArray(selectedStudent.distanceLearning) ? selectedStudent.distanceLearning.join(', ') : selectedStudent.distanceLearning || 'N/A'}</p>
                       )}
                     </div>
                     <div className="bg-orange-50 p-4 rounded-lg">

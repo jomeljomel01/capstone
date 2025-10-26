@@ -14,6 +14,7 @@ export default function NewStudent() {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedStudent, setEditedStudent] = useState<Student | null>(null);
+  const [originalLrn, setOriginalLrn] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     fetchPendingStudents();
@@ -117,6 +118,7 @@ export default function NewStudent() {
   const handleView = (student: Student) => {
     setSelectedStudent(student);
     setEditedStudent({ ...student });
+    setOriginalLrn(student.lrn);
     setShowModal(true);
     setIsEditing(false);
   };
@@ -133,21 +135,18 @@ export default function NewStudent() {
   };
 
   const handleSave = async () => {
-    console.log('handleSave called');
-    console.log('editedStudent:', editedStudent);
-    console.log('editedStudent.lrn:', editedStudent?.lrn);
+    if (!editedStudent || !originalLrn) return;
 
-    if (!editedStudent || !editedStudent.lrn) {
-      console.log('Missing editedStudent or lrn, returning');
-      return;
-    }
+    console.log('Starting save process...');
+    console.log('editedStudent:', editedStudent);
+    console.log('originalLrn:', originalLrn);
 
     try {
       console.log('Attempting to update student in database...');
       const { data, error } = await supabase
         .from('NewStudents')
         .update(editedStudent)
-        .eq('lrn', editedStudent.lrn)
+        .eq('lrn', originalLrn)
         .select();
 
       console.log('Supabase response:', { data, error });
@@ -159,7 +158,7 @@ export default function NewStudent() {
 
       console.log('Update successful, updating local state...');
       setSelectedStudent(editedStudent);
-      setStudents(students.map(s => s.lrn === editedStudent.lrn ? editedStudent : s));
+      setStudents(students.map(s => s.lrn === originalLrn ? editedStudent : s));
       setIsEditing(false);
       alert('Student information updated successfully!');
       console.log('Save operation completed');
@@ -241,7 +240,6 @@ export default function NewStudent() {
               <option value="ABM">ABM</option>
               <option value="HUMSS">HUMSS</option>
               <option value="TVL-ICT">TVL-ICT</option>
-              <option value="ALS">ALS</option>
             </select>
             <select
               value={sortGradeLevel}
@@ -904,6 +902,19 @@ export default function NewStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
+                          <span className="font-medium w-20">Middle Name:</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editedStudent?.guardianMN || ''}
+                              onChange={(e) => handleInputChange('guardianMN', e.target.value)}
+                              className="flex-1 px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                          ) : (
+                            <span>{selectedStudent.guardianMN || 'N/A'}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
                           <span className="font-medium w-20">Last Name:</span>
                           {isEditing ? (
                             <input
@@ -1058,6 +1069,7 @@ export default function NewStudent() {
                           <option value="ABM">ABM</option>
                           <option value="HUMSS">HUMSS</option>
                           <option value="TVL-ICT">TVL-ICT</option>
+                          <option value="ALS">ALS</option>
                         </select>
                       ) : (
                         <p className="text-lg font-semibold text-gray-900">{selectedStudent.strand || 'N/A'}</p>

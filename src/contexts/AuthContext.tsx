@@ -19,8 +19,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Detect if running in Electron
-const isElectron = typeof window !== 'undefined' && window.process && window.process.type === 'renderer';
+// Removed Electron detection as we now always sign out
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -28,32 +27,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isElectron) {
-      // In Electron, sign out any existing session to start fresh
-      supabase.auth.signOut().then(() => {
-        setSession(null);
-        setUser(null);
-        setLoading(false);
-      });
-    } else {
-      // Get initial session
-      supabase.auth.getSession().then(({ data: { session } }) => {
+    // Always sign out any existing session to start fresh
+    supabase.auth.signOut().then(() => {
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-      });
+      }
+    );
 
-      // Listen for auth changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        (_event, session) => {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }
-      );
-
-      return () => subscription.unsubscribe();
-    }
+    return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {

@@ -13,6 +13,7 @@ export default function RegularStudent() {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedStudent, setEditedStudent] = useState<Student | null>(null);
+  const [originalLrn, setOriginalLrn] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     fetchRegularStudents();
@@ -67,6 +68,7 @@ export default function RegularStudent() {
   const handleView = (student: Student) => {
     setSelectedStudent(student);
     setEditedStudent({ ...student });
+    setOriginalLrn(student.lrn);
     setShowModal(true);
     setIsEditing(false);
   };
@@ -83,21 +85,18 @@ export default function RegularStudent() {
   };
 
   const handleSave = async () => {
-    console.log('handleSave called');
-    console.log('editedStudent:', editedStudent);
-    console.log('editedStudent.lrn:', editedStudent?.lrn);
+    if (!editedStudent || !originalLrn) return;
 
-    if (!editedStudent || !editedStudent.lrn) {
-      console.log('Missing editedStudent or lrn, returning');
-      return;
-    }
+    console.log('Starting save process...');
+    console.log('editedStudent:', editedStudent);
+    console.log('originalLrn:', originalLrn);
 
     try {
       console.log('Attempting to update student in database...');
       const { data, error } = await supabase
         .from('NewStudents')
         .update(editedStudent)
-        .eq('lrn', editedStudent.lrn)
+        .eq('lrn', originalLrn)
         .select();
 
       console.log('Supabase response:', { data, error });
@@ -108,20 +107,12 @@ export default function RegularStudent() {
       }
 
       console.log('Update successful, updating local state...');
-      console.log('Before state update - students length:', students.length);
-      console.log('editedStudent:', editedStudent);
 
       setSelectedStudent(editedStudent);
-      const updatedStudents = students.map(s => {
-        console.log('Comparing s.lrn:', s.lrn, 'with editedStudent.lrn:', editedStudent.lrn);
-        return s.lrn === editedStudent.lrn ? editedStudent : s;
-      });
-      console.log('Updated students array:', updatedStudents);
-      setStudents(updatedStudents);
+      setStudents(students.map(s => s.lrn === originalLrn ? editedStudent : s));
 
       setIsEditing(false);
       alert('Student information updated successfully!');
-      console.log('Save operation completed');
     } catch (error) {
       console.error('Error updating student:', error);
       alert('Failed to update student information');
@@ -843,6 +834,19 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
+                          <span className="font-medium w-20">Middle Name:</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editedStudent?.guardianMN || ''}
+                              onChange={(e) => handleInputChange('guardianMN', e.target.value)}
+                              className="flex-1 px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                          ) : (
+                            <span>{selectedStudent.guardianMN || 'N/A'}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
                           <span className="font-medium w-20">Last Name:</span>
                           {isEditing ? (
                             <input
@@ -997,6 +1001,7 @@ export default function RegularStudent() {
                           <option value="ABM">ABM</option>
                           <option value="HUMSS">HUMSS</option>
                           <option value="TVL-ICT">TVL-ICT</option>
+                          <option value="ALS">ALS</option>
                         </select>
                       ) : (
                         <p className="text-lg font-semibold text-gray-900">{selectedStudent.strand || 'N/A'}</p>
