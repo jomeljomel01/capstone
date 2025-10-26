@@ -52,7 +52,11 @@ export default function AppUsers() {
 
 
 
-  const handleApproveAppUser = async (userId: string) => {
+  const handleApproveAppUser = async (userId: string, userEmail: string) => {
+    if (!confirm(`Are you sure you want to approve the app user account for ${userEmail}?`)) {
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('AppUsers')
@@ -168,7 +172,7 @@ export default function AppUsers() {
                         </button>
                         {user.status === 'Pending' && (
                           <button
-                            onClick={() => handleApproveAppUser(user.id)}
+                            onClick={() => handleApproveAppUser(user.id, user.email)}
                             className="flex items-center space-x-1 px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
                           >
                             <CheckCircle size={14} />
