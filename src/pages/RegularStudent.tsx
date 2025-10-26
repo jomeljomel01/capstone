@@ -83,20 +83,45 @@ export default function RegularStudent() {
   };
 
   const handleSave = async () => {
-    if (!editedStudent || !editedStudent.lrn) return;
+    console.log('handleSave called');
+    console.log('editedStudent:', editedStudent);
+    console.log('editedStudent.lrn:', editedStudent?.lrn);
+
+    if (!editedStudent || !editedStudent.lrn) {
+      console.log('Missing editedStudent or lrn, returning');
+      return;
+    }
 
     try {
-      const { error } = await supabase
+      console.log('Attempting to update student in database...');
+      const { data, error } = await supabase
         .from('NewStudents')
         .update(editedStudent)
-        .eq('lrn', editedStudent.lrn);
+        .eq('lrn', editedStudent.lrn)
+        .select();
 
-      if (error) throw error;
+      console.log('Supabase response:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Update successful, updating local state...');
+      console.log('Before state update - students length:', students.length);
+      console.log('editedStudent:', editedStudent);
 
       setSelectedStudent(editedStudent);
-      setStudents(students.map(s => s.lrn === editedStudent.lrn ? editedStudent : s));
+      const updatedStudents = students.map(s => {
+        console.log('Comparing s.lrn:', s.lrn, 'with editedStudent.lrn:', editedStudent.lrn);
+        return s.lrn === editedStudent.lrn ? editedStudent : s;
+      });
+      console.log('Updated students array:', updatedStudents);
+      setStudents(updatedStudents);
+
       setIsEditing(false);
       alert('Student information updated successfully!');
+      console.log('Save operation completed');
     } catch (error) {
       console.error('Error updating student:', error);
       alert('Failed to update student information');
