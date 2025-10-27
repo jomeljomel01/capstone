@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase, Student } from '../lib/supabase';
 import { Search } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function ALSStudent() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -11,6 +13,8 @@ export default function ALSStudent() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedStudent, setEditedStudent] = useState<Student | null>(null);
   const [originalLrn, setOriginalLrn] = useState<string | undefined>(undefined);
+
+  const modalContentRef = useRef<HTMLDivElement>(null);
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch = searchTerm === '' ||
@@ -148,6 +152,78 @@ export default function ALSStudent() {
     }
   };
 
+  const handleGeneratePDF = () => {
+    const input = modalContentRef.current;
+
+    // Get the grandparent modal container (which has max-h-[95vh])
+    const modalContainer = input?.parentElement?.parentElement;
+
+    if (!input || !modalContainer || !selectedStudent) {
+      console.error('Modal elements or student not found');
+      return;
+    }
+
+    // 1. Store original CSS classes to restore them later
+    const inputOriginalClass = input.className;
+    const containerOriginalClass = modalContainer.className;
+
+    // 2. Temporarily remove all overflow and max-height classes
+    input.className = input.className
+      .replace('overflow-y-auto', '')
+      .replace('max-h-[75vh]', '');
+    modalContainer.className = modalContainer.className
+      .replace('overflow-hidden', '')
+      .replace('max-h-[95vh]', '');
+
+    // 3. Run html2canvas on the now-full-height content
+    html2canvas(input, {
+      backgroundColor: '#ffffff',
+    })
+      .then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+
+        // 4. Set PDF back to A4 size
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4',
+        });
+
+        const margin = 10;
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const usableWidth = pageWidth - (margin * 2);
+        const usableHeight = pageHeight - (margin * 2);
+
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const canvasRatio = canvasWidth / canvasHeight;
+
+        let finalWidth, finalHeight;
+        if (canvasRatio < (usableWidth / usableHeight)) {
+          finalHeight = usableHeight;
+          finalWidth = finalHeight * canvasRatio;
+        } else {
+          finalWidth = usableWidth;
+          finalHeight = finalWidth / canvasRatio;
+        }
+
+        const x = margin + (usableWidth - finalWidth) / 2;
+        const y = margin;
+
+        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+        pdf.save(`student-${selectedStudent.lname}-${selectedStudent.lrn}.pdf`);
+      })
+      .catch((err) => {
+        console.error('Error generating PDF:', err);
+        alert('Failed to generate PDF');
+      })
+      .finally(() => {
+        // 5. ALWAYS restore the original classes
+        input.className = inputOriginalClass;
+        modalContainer.className = containerOriginalClass;
+      });
+  };
 
   return (
     <div className="p-8">
@@ -256,7 +332,7 @@ export default function ALSStudent() {
                   </button>
                 </div>
               </div>
-              <div className="overflow-y-auto max-h-[75vh]">
+              <div ref={modalContentRef} className="overflow-y-auto max-h-[75vh]">
                 {/* Personal Information */}
                 <div className="mb-8">
                   <h3 className="text-xl font-semibold text-blue-600 mb-4 border-b-2 border-blue-200 pb-2">Personal Information</h3>
@@ -485,7 +561,7 @@ export default function ALSStudent() {
                       <h4 className="text-lg font-medium text-gray-800 mb-3">Current Address</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">House Number:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">House Number:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -498,7 +574,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Street Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Street Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -511,7 +587,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Barangay:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Barangay:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -524,7 +600,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Municipality:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Municipality:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -537,7 +613,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Province:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Province:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -550,7 +626,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Country:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Country:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -563,7 +639,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Zip Code:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Zip Code:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -581,7 +657,7 @@ export default function ALSStudent() {
                       <h4 className="text-lg font-medium text-gray-800 mb-3">Permanent Address</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">House Number:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">House Number:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -594,7 +670,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Street Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Street Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -607,7 +683,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Barangay:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Barangay:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -620,7 +696,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Municipality:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Municipality:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -633,7 +709,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Province:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Province:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -646,7 +722,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Country:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Country:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -659,7 +735,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Zip Code:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Zip Code:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -684,7 +760,7 @@ export default function ALSStudent() {
                       <h4 className="text-lg font-medium text-gray-800 mb-3">Father</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">First Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">First Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -697,7 +773,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Middle Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Middle Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -710,7 +786,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Last Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Last Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -723,7 +799,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Contact:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Contact:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -741,7 +817,7 @@ export default function ALSStudent() {
                       <h4 className="text-lg font-medium text-gray-800 mb-3">Mother</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">First Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">First Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -754,7 +830,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Middle Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Middle Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -767,7 +843,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Last Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Last Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -780,7 +856,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Contact:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Contact:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -798,7 +874,7 @@ export default function ALSStudent() {
                       <h4 className="text-lg font-medium text-gray-800 mb-3">Guardian</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">First Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">First Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -811,7 +887,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Middle Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Middle Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -824,7 +900,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Last Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Last Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -837,7 +913,7 @@ export default function ALSStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Contact:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Contact:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -1034,6 +1110,12 @@ export default function ALSStudent() {
                 </div>
               </div>
               <div className="mt-6 flex justify-end border-t pt-4">
+                <button
+                  onClick={handleGeneratePDF}
+                  className="mr-3 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
+                >
+                  Download PDF
+                </button>
                 <button
                   onClick={closeModal}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
