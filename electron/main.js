@@ -1,7 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import bcrypt from 'bcrypt';
 import { supabaseAdmin } from './supabaseAdmin.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,7 +27,7 @@ function createWindow() {
   const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5183');
+    mainWindow.loadURL('http://localhost:5176');
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
@@ -50,13 +49,9 @@ app.whenReady().then(() => {
       // userId is string from frontend, convert to integer for admin table
       const userIdInt = parseInt(userId, 10);
 
-      // Hash the new password
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-
       const { data, error } = await supabaseAdmin
         .from('admin')
-        .update({ password: hashedPassword, updated_at: new Date().toISOString() })
+        .update({ password: newPassword, updated_at: new Date().toISOString() })
         .eq('id', userIdInt)
         .select()
         .single();
@@ -201,9 +196,8 @@ app.whenReady().then(() => {
         throw error;
       }
 
-      // Verify password using bcrypt
-      const isValidPassword = await bcrypt.compare(password, data.password);
-      if (!isValidPassword) {
+      // Check password directly (no hashing)
+      if (password !== data.password) {
         return { success: false, error: 'Invalid email or password' };
       }
 

@@ -1,12 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase, Student } from '../lib/supabase';
-import { Search } from 'lucide-react';
+import { Search, Eye, Trash2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 export default function ALSStudent() {
   const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -45,7 +44,6 @@ export default function ALSStudent() {
 
   const fetchALSStudents = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('ALS')
         .select('*')
@@ -55,8 +53,6 @@ export default function ALSStudent() {
       setStudents(data || []);
     } catch (error) {
       console.error('Error fetching ALS students:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -243,79 +239,89 @@ export default function ALSStudent() {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-4xl font-bold text-gray-700">ALS Students</h1>
+    <div className="relative flex min-h-screen overflow-hidden">
+      <div className="absolute inset-0 -z-10">
+        <div className="w-full h-[450px] bg-gradient-to-br from-blue-500 to-blue-50"></div>
+        <div className="w-full h-full bg-gray-100 -mt-[2px]"></div>
       </div>
 
-      <div className="mb-6 flex items-center gap-4">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            placeholder="Search"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-        </div>
-        <button className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600">
-          Search
-        </button>
-      </div>
-
-      <div className="bg-white/80 rounded-lg shadow-md overflow-hidden backdrop-blur-sm">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
-          <h2 className="text-sm font-semibold text-gray-700 uppercase mb-3">
-            List of All ALS Students:
-          </h2>
-        </div>
-
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading...</div>
-        ) : filteredStudents.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No ALS students found</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-blue-600 text-white">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Action</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">LRN</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Age</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white/50">
-                {filteredStudents.map((student) => (
-                  <tr key={student.lrn} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleView(student)}
-                          className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={() => handleDelete(student.lrn)}
-                          className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-800">{student.lrn || 'N/A'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-800">{student.lname}, {student.fname} {student.mname}</td>
-                    <td className="px-4 py-3 text-sm text-gray-800">{student.age}</td>
-                    <td className="px-4 py-3 text-sm text-gray-800">{student.enrollment_status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="flex-1 flex flex-col min-h-screen ml-68 overflow-y-auto">
+        <div className="p-4 pl-32 pt-12">
+          <div className="mb-6 flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-white">ALS Students</h1>
           </div>
-        )}
+
+          <div className="mb-6 flex items-center gap-4">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder="Search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            </div>
+            <button className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600">
+              Search
+            </button>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-md flex-grow">
+            <div className="border-b-2 border-gray-300 pb-2 mb-4">
+              <h2 className="text-lg font-bold text-gray-600">LIST OF ALL ALS STUDENTS:</h2>
+            </div>
+            <div className="overflow-x-auto">
+              {filteredStudents.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">No ALS students found</div>
+              ) : (
+                <table className="w-full text-sm text-left text-gray-500">
+                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                      <th scope="col" className="py-3 px-6">Action</th>
+                      <th scope="col" className="py-3 px-6">LRN</th>
+                      <th scope="col" className="py-3 px-6">Name</th>
+                      <th scope="col" className="py-3 px-6">Age</th>
+                      <th scope="col" className="py-3 px-6">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredStudents.map((student) => (
+                      <tr key={student.lrn} className="bg-white border-b">
+                        <td className="py-3 px-6">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleView(student)}
+                              className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                            >
+                              <Eye size={14} />
+                              <span>View</span>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(student.lrn)}
+                              className="flex items-center space-x-1 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                            >
+                              <Trash2 size={14} />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        </td>
+                        <td className="py-3 px-6">{student.lrn || 'N/A'}</td>
+                        <td className="py-3 px-6">{student.lname}, {student.fname} {student.mname}</td>
+                        <td className="py-3 px-6">{student.age}</td>
+                        <td className="py-3 px-6">
+                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                            {student.enrollment_status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Modal for viewing student details */}

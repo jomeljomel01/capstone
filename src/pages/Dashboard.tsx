@@ -2,11 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase, Student } from '../lib/supabase';
 
 export default function Dashboard() {
-  const [students, setStudents] = useState<Student[]>([]);
   const [pendingStudents, setPendingStudents] = useState<Student[]>([]);
-  const [alsStudents, setAlsStudents] = useState<Student[]>([]);
   const [alsPendingStudents, setAlsPendingStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     enrolled: 0,
     pending: 0,
@@ -45,8 +42,6 @@ export default function Dashboard() {
 
   const fetchStudents = async () => {
     try {
-      setLoading(true);
-
       // Fetch enrolled students from NewStudents
       const { data: enrolledData, error: enrolledError } = await supabase
         .from('NewStudents')
@@ -83,9 +78,7 @@ export default function Dashboard() {
 
       if (alsPendingError) throw alsPendingError;
 
-      setStudents(enrolledData || []);
       setPendingStudents(pendingData || []);
-      setAlsStudents(alsEnrolledData || []);
       setAlsPendingStudents(alsPendingData || []);
 
       // Calculate strand counts
@@ -107,262 +100,198 @@ export default function Dashboard() {
       });
     } catch (error) {
       console.error('Error fetching students:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-4xl font-bold text-gray-700">Dashboard</h1>
-        </div>
+    <div className="relative flex min-h-screen overflow-hidden">
+      {/* Main container for the two-part background */}
+      <div className="absolute inset-0 -z-10">
+        <div className="w-full h-[450px] bg-gradient-to-br from-blue-500 to-blue-50"></div>
+        <div className="w-full h-full bg-gray-100 -mt-[2px]"></div> {/* Clean overlap */}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-amber-100 to-amber-50 rounded-lg p-6 shadow-md border border-amber-200">
-          <p className="text-amber-700 text-xs font-semibold uppercase mb-1">STEM STUDENTS</p>
-          <p className="text-5xl font-bold text-gray-800">{stats.stem}</p>
-        </div>
+      <div className="flex-1 flex flex-col min-h-screen ml-68 overflow-y-auto">
+        <div className="p-4 pl-32 pt-8 ml-0">
+          <header className="flex justify-between items-center mb-8 mt-5">
+            <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+          </header>
 
-        <div className="bg-gradient-to-br from-amber-100 to-amber-50 rounded-lg p-6 shadow-md border border-amber-200">
-          <p className="text-amber-700 text-xs font-semibold uppercase mb-1">ABM STUDENTS</p>
-          <p className="text-5xl font-bold text-gray-800">{stats.abm}</p>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+            <div className="bg-white p-6 h-40 rounded-xl shadow-md flex items-center justify-between">
+              <div>
+                <p className="font-bold text-gray-600 uppercase">STEM STUDENTS</p>
+                <p className="text-4xl font-semibold text-gray-600 mt-2">{stats.stem}</p>
+              </div>
+              <div className="bg-gradient-to-tr from-green-400 to-green-600 p-4 rounded-full shadow-lg">
+                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+            </div>
 
-        <div className="bg-gradient-to-br from-amber-100 to-amber-50 rounded-lg p-6 shadow-md border border-amber-200">
-          <p className="text-amber-700 text-xs font-semibold uppercase mb-1">TVL-ICT STUDENTS</p>
-          <p className="text-5xl font-bold text-gray-800">{stats.tvlIct}</p>
-        </div>
+            <div className="bg-white p-6 h-40 rounded-xl shadow-md flex items-center justify-between">
+              <div>
+                <p className="font-bold text-gray-600 uppercase">ABM STUDENTS</p>
+                <p className="text-4xl font-semibold text-gray-600 mt-2">{stats.abm}</p>
+              </div>
+              <div className="bg-gradient-to-tr from-blue-400 to-blue-600 p-4 rounded-full shadow-lg">
+                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+              </div>
+            </div>
 
-        <div className="bg-gradient-to-br from-amber-100 to-amber-50 rounded-lg p-6 shadow-md border border-amber-200">
-          <p className="text-amber-700 text-xs font-semibold uppercase mb-1">HUMSS STUDENTS</p>
-          <p className="text-5xl font-bold text-gray-800">{stats.humss}</p>
-        </div>
+            <div className="bg-white p-6 h-40 rounded-xl shadow-md flex items-center justify-between">
+              <div>
+                <p className="font-bold text-gray-600 uppercase">TVL-ICT STUDENTS</p>
+                <p className="text-4xl font-semibold text-gray-600 mt-2">{stats.tvlIct}</p>
+              </div>
+              <div className="bg-gradient-to-tr from-teal-400 to-teal-600 p-4 rounded-full shadow-lg">
+                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </div>
 
-        <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-lg p-6 shadow-md border border-green-200">
-          <p className="text-green-700 text-xs font-semibold uppercase mb-1">ALS STUDENTS</p>
-          <p className="text-5xl font-bold text-gray-800">{stats.alsEnrolled}</p>
-        </div>
-      </div>
+            <div className="bg-white p-6 h-40 rounded-xl shadow-md flex items-center justify-between">
+              <div>
+                <p className="font-bold text-gray-600 uppercase">HUMSS STUDENTS</p>
+                <p className="text-4xl font-semibold text-gray-600 mt-2">{stats.humss}</p>
+              </div>
+              <div className="bg-gradient-to-tr from-purple-400 to-purple-600 p-4 rounded-full shadow-lg">
+                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path d="M12 14l9-5-9-5-9 5 9 5z" />
+                  <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222 4 2.222V20M1 14v5h22v-5" />
+                </svg>
+              </div>
+            </div>
 
-      <div className="bg-white/80 rounded-lg shadow-md overflow-hidden backdrop-blur-sm">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
-          <h2 className="text-lg font-semibold text-gray-700 uppercase">Enrolled Students:</h2>
-        </div>
+            <div className="bg-white p-6 h-40 rounded-xl shadow-md flex items-center justify-between">
+              <div>
+                <p className="font-bold text-gray-600 uppercase">ALS STUDENTS</p>
+                <p className="text-4xl font-semibold text-gray-600 mt-2">{stats.alsEnrolled}</p>
+              </div>
+              <div className="bg-gradient-to-tr from-orange-400 to-orange-600 p-4 rounded-full shadow-lg">
+                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
 
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading...</div>
-        ) : students.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No enrolled students yet</div>
-        ) : (
-          <div className="overflow-auto max-h-96">
-            <table className="w-full">
-              <thead className="bg-blue-600 text-white">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    LRN
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Strand
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Semester
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white/50">
-                {students.map((student) => (
-                  <tr key={student.lrn} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.lrn}</td>
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.lname}, {student.fname} {student.mname}</td>
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.strand}</td>
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.semester}</td>
-                    <td className="px-6 py-3">
-                      <span className="text-sm text-gray-800">
-                        {student.enrollment_status}
-                      </span>
-                    </td>
+          <div className="flex flex-col gap-8">
+            <div className="bg-white p-6 rounded-xl shadow-md flex-grow">
+              <div className="flex justify-between items-center border-b-2 border-gray-300 pb-2 mb-4">
+                <h2 className="text-lg font-bold text-gray-600">PENDING STUDENTS:</h2>
+                <a href="#" className="text-sm font-medium text-gray-600 hover:text-black bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg transition-all duration-200">See All</a>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left text-gray-500">
+                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                      <th scope="col" className="py-3 px-6">Name</th>
+                      <th scope="col" className="py-3 px-6">Strand</th>
+                      <th scope="col" className="py-3 px-6">Year Level</th>
+                      <th scope="col" className="py-3 px-6">Semester</th>
+                      <th scope="col" className="py-3 px-6">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingStudents.map((student) => (
+                      <tr key={student.lrn} className="bg-white border-b">
+                        <td className="py-3 px-6">{student.lname}, {student.fname} {student.mname}</td>
+                        <td className="py-3 px-6">{student.strand}</td>
+                        <td className="py-3 px-6">{student.semester}</td>
+                        <td className="py-3 px-6">{student.semester}</td>
+                        <td className="py-3 px-6">
+                          <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                            {student.enrollment_status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 bg-white p-6 rounded-xl shadow-md flex-grow">
+            <div className="flex justify-between items-center border-b-2 border-gray-300 pb-2 mb-4">
+              <h2 className="text-lg font-bold text-gray-600">PENDING ALS STUDENTS:</h2>
+              <a href="#" className="text-sm font-medium text-gray-600 hover:text-black bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg transition-all duration-200">See All</a>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left text-gray-500">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                  <tr>
+                    <th scope="col" className="py-3 px-6">Name</th>
+                    <th scope="col" className="py-3 px-6">LRN</th>
+                    <th scope="col" className="py-3 px-6">Age</th>
+                    <th scope="col" className="py-3 px-6">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {alsPendingStudents.map((student) => (
+                    <tr key={student.lrn} className="bg-white border-b">
+                      <td className="py-3 px-6">{student.lname}, {student.fname} {student.mname}</td>
+                      <td className="py-3 px-6">{student.lrn}</td>
+                      <td className="py-3 px-6">{student.age}</td>
+                      <td className="py-3 px-6">
+                        <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                          {student.enrollment_status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        )}
-      </div>
 
-      <div className="mt-8 bg-white/80 rounded-lg shadow-md overflow-hidden backdrop-blur-sm">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-white">
-          <h2 className="text-lg font-semibold text-gray-700 uppercase">Enrolled ALS Students:</h2>
-        </div>
+          <div className="bg-white p-6 rounded-xl shadow-lg xl:w-1/3 mt-8">
+            <div className="border-b-2 border-gray-400 pb-2 mb-4">
+              <h2 className="text-lg font-bold text-gray-600">NO. OF ENROLLMENT APPLICATIONS:</h2>
+            </div>
+            <div className="space-y-4 text-gray-600">
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></div>
+                <div className="flex justify-between w-full">
+                  <span>Pending</span>
+                  <span>{stats.pending}</span>
+                </div>
+              </div>
 
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading...</div>
-        ) : alsStudents.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No enrolled ALS students yet</div>
-        ) : (
-          <div className="overflow-auto max-h-96">
-            <table className="w-full">
-              <thead className="bg-green-600 text-white">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    LRN
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Age
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white/50">
-                {alsStudents.map((student) => (
-                  <tr key={student.lrn} className="hover:bg-green-50/50 transition-colors">
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.lrn}</td>
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.lname}, {student.fname} {student.mname}</td>
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.age}</td>
-                    <td className="px-6 py-3">
-                      <span className="text-sm text-gray-800">
-                        {student.enrollment_status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
+                <div className="flex justify-between w-full">
+                  <span>Enrolled</span>
+                  <span>{stats.enrolled}</span>
+                </div>
+              </div>
 
-      <div className="mt-8 bg-white/80 rounded-lg shadow-md overflow-hidden backdrop-blur-sm">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-white">
-          <h2 className="text-lg font-semibold text-gray-700 uppercase">Pending Students:</h2>
-        </div>
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-blue-400 rounded-full mr-3"></div>
+                <div className="flex justify-between w-full">
+                  <span>ALS Pending</span>
+                  <span>{stats.alsPending}</span>
+                </div>
+              </div>
 
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading...</div>
-        ) : pendingStudents.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No pending students</div>
-        ) : (
-          <div className="overflow-auto max-h-96">
-            <table className="w-full">
-              <thead className="bg-yellow-600 text-white">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    LRN
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Strand
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Semester
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white/50">
-                {pendingStudents.map((student) => (
-                  <tr key={student.lrn} className="hover:bg-yellow-50/50 transition-colors">
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.lrn}</td>
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.lname}, {student.fname} {student.mname}</td>
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.strand}</td>
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.semester}</td>
-                    <td className="px-6 py-3">
-                      <span className="text-sm text-gray-800">
-                        {student.enrollment_status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-purple-400 rounded-full mr-3"></div>
+                <div className="flex justify-between w-full">
+                  <span>ALS Enrolled</span>
+                  <span>{stats.alsEnrolled}</span>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
 
-      <div className="mt-8 bg-white/80 rounded-lg shadow-md overflow-hidden backdrop-blur-sm">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-white">
-          <h2 className="text-lg font-semibold text-gray-700 uppercase">Pending ALS Students:</h2>
-        </div>
-
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading...</div>
-        ) : alsPendingStudents.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No pending ALS students</div>
-        ) : (
-          <div className="overflow-auto max-h-96">
-            <table className="w-full">
-              <thead className="bg-orange-600 text-white">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    LRN
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Age
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white/50">
-                {alsPendingStudents.map((student) => (
-                  <tr key={student.lrn} className="hover:bg-orange-50/50 transition-colors">
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.lrn}</td>
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.lname}, {student.fname} {student.mname}</td>
-                    <td className="px-6 py-3 text-sm text-gray-800">{student.age}</td>
-                    <td className="px-6 py-3">
-                      <span className="text-sm text-gray-800">
-                        {student.enrollment_status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-8 bg-white/80 rounded-lg shadow-md p-6 backdrop-blur-sm">
-        <h3 className="text-sm font-semibold text-gray-700 uppercase mb-4">No. of Enrollment Applications:</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-gray-700">Pending:</span>
-            <span className="font-semibold">{stats.pending}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-700">Enrolled:</span>
-            <span className="font-semibold">{stats.enrolled}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-700">ALS Pending:</span>
-            <span className="font-semibold">{stats.alsPending}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-700">ALS Enrolled:</span>
-            <span className="font-semibold">{stats.alsEnrolled}</span>
-          </div>
         </div>
       </div>
     </div>
