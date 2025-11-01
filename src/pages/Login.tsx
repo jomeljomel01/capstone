@@ -39,102 +39,95 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-100 to-blue-100">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex max-w-5xl w-full">
-        <div className="w-1/2 p-12">
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xl">
-                K
-              </div>
-              <h1 className="text-3xl font-bold text-gray-800">KVSHS Admin Login</h1>
-            </div>
-            <p className="text-gray-600">Login with your admin credentials.</p>
+    <div className="min-h-screen w-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-100 to-blue-300">
+      <div className="w-full max-w-4xl bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-2xl overflow-hidden border border-blue-300 grid md:grid-cols-2">
+        <div className="p-8 md:p-12">
+          <div className="flex items-center gap-3 mb-8">
+            <img src="/src/assets/Logo.png" alt="School Logo" className="w-10 h-10" />
+            <h1 className="text-2xl font-bold text-gray-600">KVSHS Admin Login</h1>
           </div>
+
+          <p className="text-gray-600 mb-8">Login with your admin credentials.</p>
 
           {error && <p className="text-red-500 mb-4 text-sm">{error}</p>}
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-gray-700 font-medium mb-2">Your E-mail</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Your E-mail</label>
               <input
                 type="email"
+                id="email"
                 placeholder="programmer.ferg@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 font-medium mb-2">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  id="password"
                   placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 pr-10 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-700"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer hover:opacity-80 transition"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
                 </button>
               </div>
             </div>
 
             <div className="flex items-center">
               <input
-                type="checkbox"
                 id="keepLoggedIn"
+                type="checkbox"
                 checked={keepLoggedIn}
                 onChange={(e) => setKeepLoggedIn(e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-gray-300 rounded"
               />
-              <label htmlFor="keepLoggedIn" className="ml-2 text-gray-700">
-                Keep me logged in
-              </label>
+              <label htmlFor="keepLoggedIn" className="ml-2 block text-sm text-gray-900">Keep me logged in</label>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 mt-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg text-lg font-medium hover:from-blue-600 hover:to-blue-800 transition duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Logging in...' : 'Log In'}
             </button>
 
-            <div className="text-center">
-              <Link to="/forgot-password" className="text-blue-600 hover:text-blue-700 text-sm">
-                Forgot your password?
-              </Link>
+            <div className="text-center pt-2">
+              <Link to="/forgot-password" className="font-medium text-sm text-blue-600 hover:text-blue-500">Forgot Password?</Link>
             </div>
           </form>
         </div>
 
-        <div className="w-1/2 bg-gradient-to-br from-blue-500 to-blue-700 p-12 flex flex-col items-center justify-center text-white relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-transparent"></div>
-
-          <div className="relative z-10 text-center mb-8">
-            <div className="mb-12">
-              <svg className="w-64 h-64 mx-auto" viewBox="0 0 200 200" fill="none">
-                <rect x="50" y="80" width="100" height="100" fill="white" opacity="0.9" rx="4"/>
-                <rect x="65" y="95" width="20" height="25" fill="#3B82F6" opacity="0.8"/>
-                <rect x="90" y="95" width="20" height="25" fill="#3B82F6" opacity="0.8"/>
-                <rect x="115" y="95" width="20" height="25" fill="#3B82F6" opacity="0.8"/>
-                <rect x="75" y="130" width="50" height="50" fill="#1E40AF" opacity="0.9"/>
-                <path d="M50 80 L100 40 L150 80" fill="#93C5FD" opacity="0.9"/>
-              </svg>
-            </div>
-
-            <p className="text-xl mb-2">Don't have an account yet?</p>
-            <p className="text-sm opacity-90">Contact us at <span className="font-semibold">jomelmarino42@gmail.com</span> and</p>
-            <p className="text-sm opacity-90">we will take care of everything!!</p>
+        <div className="hidden md:flex flex-col bg-gradient-to-br from-blue-500 to-blue-700 p-8 md:p-12 text-white">
+          <div className="flex-grow flex items-center justify-center">
+            <svg className="w-3/4 h-auto" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M100 20L20 70H180L100 20Z" fill="white" fillOpacity="0.5" />
+              <rect x="30" y="70" width="140" height="60" rx="5" fill="white" fillOpacity="0.8" />
+              <rect x="50" y="90" width="20" height="20" rx="2" fill="#2563EB" />
+              <rect x="80" y="90" width="40" height="40" rx="2" fill="#2563EB" />
+              <rect x="130" y="90" width="20" height="20" rx="2" fill="#2563EB" />
+              <path d="M10 130H190V140H10V130Z" fill="white" fillOpacity="0.6" />
+            </svg>
+          </div>
+          <div className="text-center mt-auto">
+            <p className="text-sm">
+              Don't have an account yet? <br />
+              Contact us at <span className="font-semibold">johnmichael.abanil@student.pnm.edu.ph</span> and we will take care of everything!!
+            </p>
           </div>
         </div>
       </div>

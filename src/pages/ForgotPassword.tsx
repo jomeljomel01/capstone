@@ -123,25 +123,27 @@ export default function ForgotPassword() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-100 to-blue-100">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+      <div className="min-h-screen w-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-100 to-blue-300">
+        <div className="w-full max-w-md bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-2xl overflow-hidden border border-blue-300">
+          <div className="p-8 md:p-12">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">OTP Sent!</h2>
+              <p className="text-gray-600 mb-6">
+                A 6-digit OTP has been sent to your email. Please enter it below.
+              </p>
+              <Link
+                to="/login"
+                className="inline-flex items-center text-blue-600 hover:text-blue-500 font-medium"
+              >
+                <ArrowLeft size={16} className="mr-2" />
+                Back to Login
+              </Link>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">OTP Sent!</h2>
-            <p className="text-gray-600 mb-6">
-              A 6-digit OTP has been sent to your email. Please enter it below.
-            </p>
-            <Link
-              to="/login"
-              className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
-            >
-              <ArrowLeft size={16} className="mr-2" />
-              Back to Login
-            </Link>
           </div>
         </div>
       </div>
@@ -149,87 +151,92 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-100 to-blue-100">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Forgot Your Password?</h1>
-          <p className="text-gray-600">
-            Enter your email address, and we'll send you a link to reset your password.
+    <div className="min-h-screen w-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-100 to-blue-300">
+      <div className="w-full max-w-md bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-2xl overflow-hidden border border-blue-300">
+        <div className="p-8 md:p-12">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-gray-600">Forgot Password</h1>
+          </div>
+
+          <p className="text-gray-600 mb-8">
+            Enter your email address, and we'll send you an OTP to reset your password.
           </p>
-        </div>
 
-        {error && <p className="text-red-500 mb-4 text-sm">{error}</p>}
+          {error && <p className="text-red-500 mb-4 text-sm">{error}</p>}
 
-        {!showOtpInput ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-gray-700 font-medium mb-2">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your email"
-                required
-              />
-            </div>
+          {!showOtpInput ? (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200"
+                  placeholder="Enter your email"
+                  required
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 mt-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg text-lg font-medium hover:from-blue-600 hover:to-blue-800 transition duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Sending...' : 'Send OTP'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleOtpSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">Enter OTP</label>
+                <input
+                  type="text"
+                  id="otp"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200 text-center text-2xl font-mono tracking-widest"
+                  placeholder="000000"
+                  maxLength={6}
+                  required
+                />
+                <p className="text-sm text-gray-500 mt-2">
+                  Enter the 6-digit code sent to {email}
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 mt-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg text-lg font-medium hover:from-blue-600 hover:to-blue-800 transition duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Verifying...' : 'Verify OTP'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOtpInput(false);
+                  setOtp('');
+                  setSuccess(false);
+                }}
+                className="w-full py-2 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition duration-300"
+              >
+                Back
+              </button>
+            </form>
+          )}
+
+          <div className="text-center pt-6">
+            <Link
+              to="/login"
+              className="inline-flex items-center text-blue-600 hover:text-blue-500 font-medium"
             >
-              {loading ? 'Sending...' : 'Send OTP'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleOtpSubmit} className="space-y-4">
-            <div>
-              <label className="block text-gray-700 font-medium mb-2">Enter OTP</label>
-              <input
-                type="text"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl font-mono tracking-widest"
-                placeholder="000000"
-                maxLength={6}
-                required
-              />
-              <p className="text-sm text-gray-500 mt-2">
-                Enter the 6-digit code sent to {email}
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? 'Verifying...' : 'Verify OTP'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowOtpInput(false);
-                setOtp('');
-                setSuccess(false);
-              }}
-              className="w-full bg-gray-500 text-white py-2 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
-            >
-              Back
-            </button>
-          </form>
-        )}
-
-        <div className="text-center mt-6">
-          <Link
-            to="/login"
-            className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
-          >
-            <ArrowLeft size={16} className="mr-2" />
-            Back to Login
-          </Link>
+              <ArrowLeft size={16} className="mr-2" />
+              Back to Login
+            </Link>
+          </div>
         </div>
       </div>
     </div>
