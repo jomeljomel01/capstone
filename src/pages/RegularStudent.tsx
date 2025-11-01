@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase, Student } from '../lib/supabase';
 import { Search } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function RegularStudent() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -13,6 +15,10 @@ export default function RegularStudent() {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedStudent, setEditedStudent] = useState<Student | null>(null);
+  const [originalLrn, setOriginalLrn] = useState<string | undefined>(undefined);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  const modalContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchRegularStudents();
@@ -67,8 +73,10 @@ export default function RegularStudent() {
   const handleView = (student: Student) => {
     setSelectedStudent(student);
     setEditedStudent({ ...student });
+    setOriginalLrn(student.lrn);
     setShowModal(true);
     setIsEditing(false);
+    setHasChanges(false);
   };
 
   const closeModal = () => {
@@ -76,6 +84,13 @@ export default function RegularStudent() {
     setSelectedStudent(null);
     setEditedStudent(null);
     setIsEditing(false);
+    setHasChanges(false);
+  };
+
+  const handleCancel = () => {
+    setEditedStudent(selectedStudent ? { ...selectedStudent } : null);
+    setIsEditing(false);
+    setHasChanges(false);
   };
 
   const handleEdit = () => {
@@ -83,19 +98,34 @@ export default function RegularStudent() {
   };
 
   const handleSave = async () => {
-    if (!editedStudent || !editedStudent.lrn) return;
+    if (!editedStudent || !originalLrn || !hasChanges) return;
+
+    console.log('Starting save process...');
+    console.log('editedStudent:', editedStudent);
+    console.log('originalLrn:', originalLrn);
 
     try {
-      const { error } = await supabase
+      console.log('Attempting to update student in database...');
+      const { data, error } = await supabase
         .from('NewStudents')
         .update(editedStudent)
-        .eq('lrn', editedStudent.lrn);
+        .eq('lrn', originalLrn)
+        .select();
 
-      if (error) throw error;
+      console.log('Supabase response:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Update successful, updating local state...');
 
       setSelectedStudent(editedStudent);
-      setStudents(students.map(s => s.lrn === editedStudent.lrn ? editedStudent : s));
+      setStudents(students.map(s => s.lrn === originalLrn ? editedStudent : s));
+
       setIsEditing(false);
+      setHasChanges(false);
       alert('Student information updated successfully!');
     } catch (error) {
       console.error('Error updating student:', error);
@@ -105,7 +135,14 @@ export default function RegularStudent() {
 
   const handleInputChange = (field: keyof Student, value: string) => {
     if (editedStudent) {
-      setEditedStudent({ ...editedStudent, [field]: value });
+      const updatedStudent = { ...editedStudent, [field]: value };
+      setEditedStudent(updatedStudent);
+      // Check if there are changes compared to original student
+      const originalStudent = selectedStudent;
+      if (originalStudent) {
+        const changed = Object.keys(updatedStudent).some(key => updatedStudent[key as keyof Student] !== originalStudent[key as keyof Student]);
+        setHasChanges(changed);
+      }
     }
   };
 
@@ -126,6 +163,79 @@ export default function RegularStudent() {
       console.error('Error deleting student:', error);
       alert('Failed to delete student');
     }
+  };
+
+  const handleGeneratePDF = () => {
+    const input = modalContentRef.current;
+
+    // Get the grandparent modal container (which has max-h-[95vh])
+    const modalContainer = input?.parentElement?.parentElement;
+
+    if (!input || !modalContainer || !selectedStudent) {
+      console.error('Modal elements or student not found');
+      return;
+    }
+
+    // 1. Store original CSS classes to restore them later
+    const inputOriginalClass = input.className;
+    const containerOriginalClass = modalContainer.className;
+
+    // 2. Temporarily remove all overflow and max-height classes
+    input.className = input.className
+      .replace('overflow-y-auto', '')
+      .replace('max-h-[75vh]', '');
+    modalContainer.className = modalContainer.className
+      .replace('overflow-hidden', '')
+      .replace('max-h-[95vh]', '');
+
+    // 3. Run html2canvas on the now-full-height content
+    html2canvas(input, {
+      backgroundColor: '#ffffff',
+    })
+      .then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+
+        // 4. Set PDF back to A4 size
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4', // Reverted to A4
+        });
+
+        const margin = 10;
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const usableWidth = pageWidth - (margin * 2);
+        const usableHeight = pageHeight - (margin * 2);
+
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const canvasRatio = canvasWidth / canvasHeight;
+
+        let finalWidth, finalHeight;
+        if (canvasRatio < (usableWidth / usableHeight)) {
+          finalHeight = usableHeight;
+          finalWidth = finalHeight * canvasRatio;
+        } else {
+          finalWidth = usableWidth;
+          finalHeight = finalWidth / canvasRatio;
+        }
+
+        const x = margin + (usableWidth - finalWidth) / 2;
+        const y = margin;
+
+        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+        pdf.save(`student-${selectedStudent.lname}-${selectedStudent.lrn}.pdf`);
+      })
+      .catch((err) => {
+        console.error('Error generating PDF:', err);
+        alert('Failed to generate PDF');
+      })
+      .finally(() => {
+        // 5. ALWAYS restore the original classes
+        input.className = inputOriginalClass;
+        modalContainer.className = containerOriginalClass;
+      });
   };
 
   return (
@@ -179,8 +289,9 @@ export default function RegularStudent() {
               className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">GRADE LEVEL</option>
-              <option value="Grade 11">Grade 11</option>
-              <option value="Grade 12">Grade 12</option>
+              <option value="None">None Graded</option>
+              <option value="11">11</option>
+              <option value="12">12</option>
             </select>
             <select
               value={sortSemester}
@@ -255,21 +366,6 @@ export default function RegularStudent() {
               <div className="flex justify-between items-center mb-6 border-b pb-4">
                 <h2 className="text-3xl font-bold text-gray-800">Student Details</h2>
                 <div className="flex items-center gap-3">
-                  {!isEditing ? (
-                    <button
-                      onClick={handleEdit}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
-                    >
-                      Edit
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleSave}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-                    >
-                      Save
-                    </button>
-                  )}
                   <button
                     onClick={closeModal}
                     className="text-gray-500 hover:text-gray-700 text-3xl leading-none"
@@ -278,7 +374,7 @@ export default function RegularStudent() {
                   </button>
                 </div>
               </div>
-              <div className="overflow-y-auto max-h-[75vh]">
+              <div ref={modalContentRef} className="overflow-y-auto max-h-[75vh]">
                 {/* Personal Information */}
                 <div className="mb-8">
                   <h3 className="text-xl font-semibold text-blue-600 mb-4 border-b-2 border-blue-200 pb-2">Personal Information</h3>
@@ -492,7 +588,7 @@ export default function RegularStudent() {
                       <h4 className="text-lg font-medium text-gray-800 mb-3">Current Address</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">House Number:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">House Number:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -505,7 +601,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Street Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Street Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -518,7 +614,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Barangay:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Barangay:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -531,7 +627,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Municipality:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Municipality:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -544,7 +640,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Province:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Province:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -557,7 +653,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Country:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Country:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -570,7 +666,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Zip Code:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Zip Code:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -588,7 +684,7 @@ export default function RegularStudent() {
                       <h4 className="text-lg font-medium text-gray-800 mb-3">Permanent Address</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">House Number:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">House Number:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -601,7 +697,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Street Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Street Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -614,7 +710,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Barangay:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Barangay:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -627,7 +723,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Municipality:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Municipality:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -640,7 +736,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Province:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Province:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -653,7 +749,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Country:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Country:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -666,7 +762,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-32">Zip Code:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Zip Code:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -691,7 +787,7 @@ export default function RegularStudent() {
                       <h4 className="text-lg font-medium text-gray-800 mb-3">Father</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">First Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">First Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -704,7 +800,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Middle Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Middle Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -717,7 +813,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Last Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Last Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -730,7 +826,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Contact:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Contact:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -748,7 +844,7 @@ export default function RegularStudent() {
                       <h4 className="text-lg font-medium text-gray-800 mb-3">Mother</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">First Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">First Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -761,7 +857,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Middle Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Middle Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -774,7 +870,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Last Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Last Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -787,7 +883,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Contact:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Contact:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -805,7 +901,7 @@ export default function RegularStudent() {
                       <h4 className="text-lg font-medium text-gray-800 mb-3">Guardian</h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">First Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">First Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -818,7 +914,20 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Last Name:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Middle Name:</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editedStudent?.guardianMN || ''}
+                              onChange={(e) => handleInputChange('guardianMN', e.target.value)}
+                              className="flex-1 px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                          ) : (
+                            <span>{selectedStudent.guardianMN || 'N/A'}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium w-32 whitespace-nowrap">Last Name:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -831,7 +940,7 @@ export default function RegularStudent() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium w-20">Contact:</span>
+                          <span className="font-medium w-32 whitespace-nowrap">Contact:</span>
                           {isEditing ? (
                             <input
                               type="text"
@@ -972,6 +1081,7 @@ export default function RegularStudent() {
                           <option value="ABM">ABM</option>
                           <option value="HUMSS">HUMSS</option>
                           <option value="TVL-ICT">TVL-ICT</option>
+                          <option value="ALS">ALS</option>
                         </select>
                       ) : (
                         <p className="text-lg font-semibold text-gray-900">{selectedStudent.strand || 'N/A'}</p>
@@ -1010,11 +1120,36 @@ export default function RegularStudent() {
                 </div>
               </div>
               <div className="mt-6 flex justify-end border-t pt-4">
+                {!isEditing ? (
+                  <button
+                    onClick={handleEdit}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                  >
+                    Edit
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleCancel}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={!hasChanges}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
+                    >
+                      Save
+                    </button>
+                  </>
+                )}
                 <button
-                  onClick={closeModal}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                  onClick={handleGeneratePDF}
+                  disabled={isEditing}
+                  className="ml-3 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
                 >
-                  Close
+                  Download PDF
                 </button>
               </div>
             </div>

@@ -1,6 +1,16 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
+
+// Declare electron API types
+declare global {
+  interface Window {
+    electronAPI: {
+      loginAdmin: (email: string, password: string) => Promise<{ success: boolean; user?: { id: number; email: string }; error?: string }>;
+    };
+  }
+}
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -9,6 +19,8 @@ export default function Login() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [keepLoggedIn, setKeepLoggedIn] = useState(false);
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,11 +28,17 @@ export default function Login() {
     setError('');
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setError(error.message);
+      const result = await window.electronAPI.loginAdmin(email, password);
+      if (!result.success) {
+        setError(result.error || 'Login failed');
+      } else {
+        // Login successful - set user in context and redirect
+        console.log('Login successful:', result.user);
+        signIn(result.user!, keepLoggedIn);
+        navigate('/'); // Use React Router navigation
       }
-    } catch {
+    } catch (err) {
+      console.error('Login error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -99,9 +117,9 @@ export default function Login() {
             </button>
 
             <div className="text-center">
-              <a href="#" className="text-blue-600 hover:text-blue-700 text-sm">
-                Forgot Password?
-              </a>
+              <Link to="/forgot-password" className="text-blue-600 hover:text-blue-700 text-sm">
+                Forgot your password?
+              </Link>
             </div>
           </form>
         </div>
@@ -122,7 +140,7 @@ export default function Login() {
             </div>
 
             <p className="text-xl mb-2">Don't have an account yet?</p>
-            <p className="text-sm opacity-90">Contact us at <span className="font-semibold">programmer.ferg@gmail.com</span> and</p>
+            <p className="text-sm opacity-90">Contact us at <span className="font-semibold">jomelmarino42@gmail.com</span> and</p>
             <p className="text-sm opacity-90">we will take care of everything!!</p>
           </div>
         </div>

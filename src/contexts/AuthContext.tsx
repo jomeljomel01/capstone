@@ -1,50 +1,87 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+
+declare global {
+  interface Window {
+    process?: {
+      type: string;
+    };
+  }
+}
+
+interface AdminUser {
+  id: number;
+  email: string;
+}
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: AdminUser | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  signIn: (user: AdminUser, remember?: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Check for remembered login first (localStorage)
+    const rememberedUser = localStorage.getItem('admin_user');
+    const rememberLogin = localStorage.getItem('remember_login') === 'true';
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    if (rememberedUser && rememberLogin) {
+      try {
+        const parsedUser = JSON.parse(rememberedUser);
+        setUser(parsedUser);
         setLoading(false);
+        return;
+      } catch (error) {
+        console.error('Error parsing remembered user:', error);
+        localStorage.removeItem('admin_user');
+        localStorage.removeItem('remember_login');
       }
-    );
+    }
 
-    return () => subscription.unsubscribe();
+    // Check for session login (sessionStorage)
+    const sessionUser = sessionStorage.getItem('admin_user');
+    if (sessionUser) {
+      try {
+        const parsedUser = JSON.parse(sessionUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Error parsing session user:', error);
+        sessionStorage.removeItem('admin_user');
+      }
+    }
+
+    setLoading(false);
   }, []);
 
+  const signIn = (userData: AdminUser, remember: boolean = false) => {
+    setUser(userData);
+    if (remember) {
+      localStorage.setItem('admin_user', JSON.stringify(userData));
+      localStorage.setItem('remember_login', 'true');
+    } else {
+      // Store in session storage for current session only
+      sessionStorage.setItem('admin_user', JSON.stringify(userData));
+    }
+  };
+
   const signOut = async () => {
-    await supabase.auth.signOut();
+    setUser(null);
+    localStorage.removeItem('admin_user');
+    localStorage.removeItem('remember_login');
+    sessionStorage.removeItem('admin_user');
   };
 
   const value = {
     user,
-    session,
     loading,
     signOut,
+    signIn,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
