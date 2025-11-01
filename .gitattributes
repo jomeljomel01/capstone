@@ -1,0 +1,19 @@
+# Ignore all CSS files from GitHub Linguist stats
+*.css linguist-generated=true
+*.css linguist-detectable=false
+
+# Also ignore built or generated files
+dist/* linguist-generated=true
+out/* linguist-generated=true
+build/* linguist-generated=true
+
+# Ignore HTML
+*.html linguist-generated=true
+
+*.js linguist-generated=true
+
+# Keep TypeScript dominant
+*.ts linguist-detectable=true
+
+# Treat markdown as documentation
+*.md linguist-documentation=true
