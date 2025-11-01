@@ -2,18 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 
-// Declare electron API types
-declare global {
-  interface Window {
-    electronAPI: {
-      updateUserPassword: (userId: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
-      getUserByEmail: (email: string) => Promise<{ success: boolean; user?: { id: number; email: string }; error?: string }>;
-      storeOtp: (userId: string, otp: string, expiresAt: string) => Promise<{ success: boolean; error?: string }>;
-      verifyOtp: (userId: string, otp: string) => Promise<{ success: boolean; data?: { userId: number }; error?: string }>;
-      generateResetToken: (userId: string) => Promise<{ success: boolean; token?: string; error?: string }>;
-    };
-  }
-}
+// Electron API types are declared in AuthContext.tsx
 
 export default function UpdatePassword() {
   const [newPassword, setNewPassword] = useState('');
@@ -23,7 +12,6 @@ export default function UpdatePassword() {
   const [success, setSuccess] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [token, setToken] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -38,8 +26,7 @@ export default function UpdatePassword() {
       return;
     }
 
-    // Store the token and userId for password update
-    setToken(token);
+    // Store the userId for password update
     setUserId(userId);
   }, [navigate, searchParams]);
 

@@ -3,14 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 
-// Declare electron API types
-declare global {
-  interface Window {
-    electronAPI: {
-      loginAdmin: (email: string, password: string) => Promise<{ success: boolean; user?: { id: number; email: string }; error?: string }>;
-    };
-  }
-}
+// Electron API types are declared in AuthContext.tsx
 
 export default function Login() {
   const [email, setEmail] = useState('');

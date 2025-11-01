@@ -5,6 +5,14 @@ declare global {
     process?: {
       type: string;
     };
+    electronAPI: {
+      loginAdmin: (email: string, password: string) => Promise<{ success: boolean; user?: { id: number; email: string }; error?: string }>;
+      updateUserPassword: (userId: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
+      getUserByEmail: (email: string) => Promise<{ success: boolean; user?: { id: number; email: string }; error?: string }>;
+      storeOtp: (userId: string, otp: string, expiresAt: string) => Promise<{ success: boolean; error?: string }>;
+      verifyOtp: (userId: string, otp: string) => Promise<{ success: boolean; data?: { userId: number }; error?: string }>;
+      generateResetToken: (userId: string) => Promise<{ success: boolean; token?: string; error?: string }>;
+    };
   }
 }
 

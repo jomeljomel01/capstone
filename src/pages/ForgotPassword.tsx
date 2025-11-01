@@ -3,18 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import emailjs from '@emailjs/browser';
 import { ArrowLeft } from 'lucide-react';
 
-// Declare electron API types
-declare global {
-  interface Window {
-    electronAPI: {
-      updateUserPassword: (userId: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
-      getUserByEmail: (email: string) => Promise<{ success: boolean; user?: { id: number; email: string }; error?: string }>;
-      storeOtp: (userId: string, otp: string, expiresAt: string) => Promise<{ success: boolean; error?: string }>;
-      verifyOtp: (userId: string, otp: string) => Promise<{ success: boolean; data?: { userId: number }; error?: string }>;
-      generateResetToken: (userId: string) => Promise<{ success: boolean; token?: string; error?: string }>;
-    };
-  }
-}
+// Electron API types are declared in AuthContext.tsx
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
